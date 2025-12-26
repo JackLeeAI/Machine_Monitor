@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+{% block title %}历史数据查询{% endblock %}
+
+{% block extra_css %}
+<!-- 新增样式：优化表格和筛选栏展示 -->
+<style>
+.filter-bar {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    padding: 15px 0;
+    flex-wrap: wrap;
+}
+.filter-bar select, .filter-bar input {
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    min-width: 180px;
+}
+.btn-filter, .btn-export {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+}
+.btn-filter {
+    background-color: #007bff;
+}
+.btn-filter:hover {
+    background-color: #0056b3;
+}
+.btn-export {
+    background-color: #28a745;
+}
+.btn-export:hover {
+    background-color: #218838;
+}
+.data-table-container {
+    margin-top: 20px;
+}
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.data-table th, .data-table td {
+    padding: 12px 15px;
+    border: 1px solid #dee2e6;
+    text-align: left;
+}
+.data-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+.abnormal-row {
+    background-color: rgba(250, 173, 20, 0.2); /* 透明警告色 */
+    color: #721c24;
+}
+.no-data {
+    text-align: center;
+    color: #6c757d;
+    padding: 30px 0;
+}
+/* 响应式适配 */
+@media (max-width: 768px) {
+    .filter-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .data-table {
+        font-size: 12px;
+    }
+    .data-table th, .data-table td {
+        padding: 8px 10px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>历史数据查询</h2>
+</div>
+
+<!-- 筛选栏：修复变量名匹配 + 样式优化 -->
+<div class="filter-bar">
+    <select id="monitor-point" name="mon_id">
+        <option value="">所有监测点</option>
+        {% for point in monitor_points %}
+        <option value="{{ point.id }}" {% if selected_mon_id and selected_mon_id|string == point.id|string %}selected{% endif %}>
+            {{ point.name }}
+        </option>
+        {% endfor %}
+    </select>
+    <input type="date" id="start-date" name="start_time" value="{{ start_date }}">
+    <input type="date" id="end-date" name="end_time" value="{{ end_date }}">
+    <button type="button" class="btn-filter" onclick="queryData()">查询</button>
+    <button type="button" class="btn-export" onclick="exportExcel()">导出Excel</button>
+    <button type="button" class="btn-export" onclick="downloadTemplate()" style="background-color: #17a2b8;">下载模板</button>
+    <input type="file" id="import-file" accept=".xlsx,.xls" style="display: none;">
+    <button type="button" class="btn-export" onclick="$('#import-file').click()" style="background-color: #6f42c1;">导入Excel</button>
+</div>
+
+<!-- 数据表格：适配后端传递的history_data -->
+<div class="data-table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>序号</th>
+                <th>采集时间</th>
+                <th>监测点</th>
+                <th>数据类型</th>
+                <th>采集值</th>
+                <th>单位</th>
+                <th>正常范围</th>
+                <th>状态</th>
+                <th>采集人</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if history_data and history_data|length > 0 %}
+            {% for data in history_data %}
+            {% set idx = loop.index + (current_page - 1) * page_size %}
+            <tr {% if not data.is_normal %}class="abnormal-row"{% endif %}>
+                <td>{{ idx }}</td>
+                <td>{{ data.mon_date }}</td>
+                <td>{{ data.mon_name }}</td>
+                <td>{{ data.sense_name }}</td>
+                <td>{{ data.mon_value }}</td>
+                <td>{{ data.unit }}</td>
+                <td>{{ data.normal_range }}</td>
+                <td>{{ '正常' if data.is_normal else '异常' }}</td>
+                <td>{{ data.collector_name }}</td>
+            </tr>
+            {% endfor %}
+            {% else %}
+            <tr>
+                <td colspan="9" class="no-data">暂无数据</td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+    
+    <!-- 分页控件 -->
+    {% if history_data and history_data|length > 0 %}
+    <div class="pagination-container" style="margin-top: 15px; text-align: center;">
+        <ul class="pagination" style="display: inline-block; padding: 0; margin: 0;">
+            <!-- 上一页按钮 -->
+            <li style="display: inline; margin: 0 5px;">
+                <a href="javascript:void(0)" onclick="queryData({{ current_page - 1 }})" {% if current_page == 1 %}disabled{% endif %} 
+                   style="padding: 6px 12px; text-decoration: none; border: 1px solid #dee2e6; color: #007bff; border-radius: 4px; cursor: pointer; {% if current_page == 1 %}opacity: 0.6; cursor: not-allowed;{% endif %}">
+                    上一页
+                </a>
+            </li>
+            
+            <!-- 页码按钮 -->
+            {% for page_num in range(1, total_pages + 1) %}
+            {% if page_num >= current_page - 2 and page_num <= current_page + 2 %}
+            <li style="display: inline; margin: 0 5px;">
+                <a href="javascript:void(0)" onclick="queryData({{ page_num }})" 
+                   style="padding: 6px 12px; text-decoration: none; border: 1px solid #dee2e6; color: #007bff; border-radius: 4px; cursor: pointer; {% if page_num == current_page %}background-color: #007bff; color: white; border-color: #007bff;{% endif %}">
+                    {{ page_num }}
+                </a>
+            </li>
+            {% endif %}
+            {% endfor %}
+            
+            <!-- 下一页按钮 -->
+            <li style="display: inline; margin: 0 5px;">
+                <a href="javascript:void(0)" onclick="queryData({{ current_page + 1 }})" {% if current_page == total_pages %}disabled{% endif %} 
+                   style="padding: 6px 12px; text-decoration: none; border: 1px solid #dee2e6; color: #007bff; border-radius: 4px; cursor: pointer; {% if current_page == total_pages %}opacity: 0.6; cursor: not-allowed;{% endif %}">
+                    下一页
+                </a>
+            </li>
+        </ul>
+        
+        <!-- 分页信息 -->
+        <div class="pagination-info" style="margin-top: 10px; font-size: 14px; color: #6c757d;">
+            共 {{ total_count }} 条记录，当前第 {{ current_page }}/{{ total_pages }} 页
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 查询数据：适配后端monitor.history路由，参数拼接优化 - 支持分页
+function queryData(page = 1) {
+    const monId = document.getElementById('monitor-point').value;
+    const startDate = document.getElementById('start-date').value;
+    const endDate = document.getElementById('end-date').value;
+
+    // 构建查询参数，避免末尾&
+    const params = [];
+    if (monId) params.push(`mon_id=${encodeURIComponent(monId)}`);
+    if (startDate) params.push(`start_time=${encodeURIComponent(startDate)}`);
+    if (endDate) params.push(`end_time=${encodeURIComponent(endDate)}`);
+    params.push(`page=${page}`); // 添加分页参数
+
+    let url = "{{ url_for('monitor.history') }}";
+    if (params.length > 0) {
+        url += "?" + params.join("&");
+    }
+
+    window.location.href = url;
+}
+
+// 导出Excel：预留接口，需后端实现monitor.export_excel
+function exportExcel() {
+    const monId = document.getElementById('monitor-point').value;
+    const startDate = document.getElementById('start-date').value;
+    const endDate = document.getElementById('end-date').value;
+
+    const params = [];
+    if (monId) params.push(`mon_id=${encodeURIComponent(monId)}`);
+    if (startDate) params.push(`start_time=${encodeURIComponent(startDate)}`);
+    if (endDate) params.push(`end_time=${encodeURIComponent(endDate)}`);
+
+    let url = "{{ url_for('monitor.export_excel') }}";
+    if (params.length > 0) {
+        url += "?" + params.join("&");
+    }
+
+    // 导出前校验
+    if (!startDate || !endDate) {
+        alert("请选择完整的时间范围后再导出！");
+        return;
+    }
+    window.open(url, '_blank');
+}
+
+// 下载模板Excel功能
+function downloadTemplate() {
+    window.open("{{ url_for('monitor.download_template') }}", '_blank');
+}
+
+// 导入Excel功能
+$('#import-file').change(function() {
+    const file = this.files[0];
+    if (!file) return;
+    
+    // 创建FormData对象
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    // 发送AJAX请求
+    $.ajax({
+        url: "{{ url_for('monitor.import_excel') }}",
+        type: 'POST',
+        data: formData,
+        contentType: false,
+        processData: false,
+        success: function(response) {
+            alert(`导入成功！共导入${response.success}条数据，跳过${response.skipped}条数据。`);
+            // 刷新页面
+            queryData();
+        },
+        error: function(xhr, status, error) {
+            alert('导入失败：' + (xhr.responseJSON ? xhr.responseJSON.error : error));
+        }
+    });
+});
+
+// 日期校验：结束日期不早于开始日期
+document.getElementById('end-date').addEventListener('change', function() {
+    const start = document.getElementById('start-date').value;
+    const end = this.value;
+    if (start && end && end < start) {
+        alert('结束日期不能早于开始日期！');
+        this.value = '';
+    }
+});
+
+// 日期校验：开始日期不晚于结束日期
+document.getElementById('start-date').addEventListener('change', function() {
+    const end = document.getElementById('end-date').value;
+    if (end && this.value && end < this.value) {
+        alert('开始日期不能晚于结束日期！');
+        document.getElementById('end-date').value = '';
+    }
+});
+</script>
+{% endblock %}

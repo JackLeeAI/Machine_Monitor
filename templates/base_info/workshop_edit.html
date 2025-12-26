@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% block title %}编辑车间{% endblock %}
+
+{# 页面专属样式 #}
+{% block extra_css %}
+<style>
+/* 页面容器 */
+.page-container {
+    padding: 20px;
+    background-color: #f8f9fa;
+    min-height: calc(100vh - 80px);
+}
+
+/* 表单卡片 */
+.form-card {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+    padding: 30px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* 表单头部 */
+.form-header {
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.form-header h2 {
+    margin: 0;
+    color: #343a40;
+    font-weight: 600;
+    font-size: 18px;
+}
+
+/* 表单组样式 */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #495057;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 14px;
+    color: #495057;
+    transition: border-color 0.2s;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* 禁用输入框样式 */
+.form-group input:disabled {
+    background-color: #e9ecef;
+    cursor: not-allowed;
+}
+
+/* 按钮组 */
+.form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 30px;
+}
+
+.btn {
+    padding: 8px 20px;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.2s;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+    color: white;
+    text-decoration: none;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    color: white;
+    text-decoration: none;
+}
+
+/* 错误提示样式 */
+.error-message {
+    color: #dc3545;
+    font-size: 13px;
+    margin-top: 5px;
+    display: none;
+}
+
+/* 响应式适配 */
+@media (max-width: 768px) {
+    .form-card {
+        padding: 20px;
+    }
+    .form-actions {
+        flex-direction: column;
+    }
+    .btn {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="form-card">
+        <div class="form-header">
+            <h2>编辑车间信息</h2>
+        </div>
+
+        {# 表单：提交到workshop_edit路由，支持POST请求 #}
+        <form id="workshopEditForm" method="POST" action="{{ url_for('base_info.workshop_edit', workshop_id=workshop.id) }}">
+            {# 车间ID（禁用，仅展示） #}
+            <div class="form-group">
+                <label for="workshopId">车间ID</label>
+                <input type="text" id="workshopId" name="workshop_id" value="{{ workshop.id }}" disabled>
+            </div>
+
+            {# 车间名称（必填） #}
+            <div class="form-group">
+                <label for="workshopName">车间名称 <span style="color: #dc3545;">*</span></label>
+                <input type="text" id="workshopName" name="workshop_name" value="{{ workshop.name }}" required>
+                <div class="error-message" id="nameError">车间名称不能为空</div>
+            </div>
+
+            {# 设备数量（只读，展示用，若需要编辑可去掉readonly） #}
+            <div class="form-group">
+                <label for="equipCount">设备数量</label>
+                <input type="number" id="equipCount" name="equip_count" value="{{ equip_count or 0 }}" readonly>
+            </div>
+
+            {# 按钮组 #}
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">保存修改</button>
+                <a href="{{ url_for('base_info.workshop_list') }}" class="btn btn-secondary">返回列表</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 表单校验：提交前验证必填项
+document.getElementById('workshopEditForm').addEventListener('submit', function(e) {
+    const workshopName = document.getElementById('workshopName').value.trim();
+    const nameError = document.getElementById('nameError');
+    let isValid = true;
+
+    // 校验车间名称
+    if (!workshopName) {
+        nameError.style.display = 'block';
+        isValid = false;
+    } else {
+        nameError.style.display = 'none';
+    }
+
+    // 校验不通过则阻止提交
+    if (!isValid) {
+        e.preventDefault();
+        // 滚动到第一个错误项
+        document.getElementById('workshopName').focus();
+    }
+});
+
+// 输入框失焦时触发校验
+document.getElementById('workshopName').addEventListener('blur', function() {
+    const workshopName = this.value.trim();
+    const nameError = document.getElementById('nameError');
+    if (!workshopName) {
+        nameError.style.display = 'block';
+    } else {
+        nameError.style.display = 'none';
+    }
+});
+
+// 显示flash消息（继承base.html的话可省略，这里做兜底）
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            alert('{{ message }}');
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+</script>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}用户注册{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2>用户注册</h2>
+</div>
+<form method="POST" action="{{ url_for('auth.register') }}" onsubmit="return validateForm('registerForm')">
+    <div class="form-group">
+        <label for="username">用户名</label>
+        <input type="text" id="username" name="username" required placeholder="请输入用户名">
+    </div>
+    <div class="form-group">
+        <label for="password">密码</label>
+        <input type="password" id="password" name="password" required placeholder="请输入密码">
+    </div>
+    <div class="form-group">
+        <label for="confirm_pwd">确认密码</label>
+        <input type="password" id="confirm_pwd" name="confirm_pwd" required placeholder="请再次输入密码">
+    </div>
+    <div class="form-group">
+        <label for="email">邮箱</label>
+        <input type="email" id="email" name="email" required placeholder="请输入邮箱">
+    </div>
+    <div class="form-group">
+        <label for="phone">手机号</label>
+        <input type="tel" id="phone" name="phone" required placeholder="请输入11位手机号">
+    </div>
+    <div class="form-group">
+        <label for="position">岗位</label>
+        <select id="position" name="position" required>
+            <option value="技术员">技术员</option>
+            <option value="管理员">管理员</option>
+        </select>
+    </div>
+    <div class="form-actions">
+        <button type="submit" class="btn-submit">注册</button>
+        <a href="{{ url_for('auth.login') }}" class="btn-cancel">取消</a>
+    </div>
+</form>
+{% endblock %}
+{% block extra_js %}
+<script>
+// 密码一致性校验
+document.querySelector('form').addEventListener('submit', function(e) {
+    const pwd = document.getElementById('password').value;
+    const confirmPwd = document.getElementById('confirm_pwd').value;
+    if (pwd !== confirmPwd) {
+        alert('两次输入的密码不一致！');
+        e.preventDefault();
+        return false;
+    }
+    // 手机号校验
+    const phone = document.getElementById('phone').value;
+    if (phone.length !== 11 || !/^\d+$/.test(phone)) {
+        alert('手机号格式错误，需为11位数字！');
+        e.preventDefault();
+        return false;
+    }
+    return true;
+});
+</script>
+{% endblock %}

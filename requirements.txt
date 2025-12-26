@@ -1,0 +1,13 @@
+flask==2.3.3
+dmPython==2.5.5
+pymysql==1.1.0  # MySQL数据库驱动
+psycopg2-binary==2.9.9  # PostgreSQL数据库驱动
+flask-sqlalchemy==3.1.1
+flask-socketio==5.3.6
+eventlet==0.33.3
+python-dotenv==1.0.0
+logging==0.4.9.6
+pandas==2.1.4  # 数据导出用
+openpyxl==3.1.2  # Excel导出用
+apscheduler==3.11.2  # 定时任务用
+

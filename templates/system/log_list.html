@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}操作日志{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2>系统操作日志</h2>
+</div>
+<div class="filter-bar">
+    <select id="user-filter" onchange="filterLog()">
+        <option value="">所有用户</option>
+        {% for user in users %}
+        <option value="{{ user.User_ID }}" {% if selected_user == user.User_ID|string %}selected{% endif %}>
+            {{ user.Username }}
+        </option>
+        {% endfor %}
+    </select>
+    <select id="operate-type" onchange="filterLog()">
+        <option value="">所有操作类型</option>
+        <option value="登录" {% if selected_type == '登录' %}selected{% endif %}>登录</option>
+        <option value="新增" {% if selected_type == '新增' %}selected{% endif %}>新增</option>
+        <option value="编辑" {% if selected_type == '编辑' %}selected{% endif %}>编辑</option>
+        <option value="删除" {% if selected_type == '删除' %}selected{% endif %}>删除</option>
+        <option value="预警处理" {% if selected_type == '预警处理' %}selected{% endif %}>预警处理</option>
+    </select>
+    <input type="date" id="start-date" onchange="filterLog()" value="{{ selected_start }}">
+    <input type="date" id="end-date" onchange="filterLog()" value="{{ selected_end }}">
+</div>
+<div class="data-table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <<th>序号</</th>
+                <<th>日志ID</</th>
+                <<th>操作人</</th>
+                <<th>操作类型</</th>
+                <<th>操作内容</</th>
+                <<th>操作时间</</th>
+                <<th>IP地址</</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if logs %}
+            {% for log in logs %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ log.Log_ID }}</td>
+                <td>{{ log.user.Username }}</td>
+                <td>{{ log.Operate_Type }}</td>
+                <td>{{ log.Operate_Content }}</td>
+                <td>{{ log.Operate_Time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                <td>{{ log.IP_Address or '未知' }}</td>
+            </tr>
+            {% endfor %}
+            {% else %}
+            <tr>
+                <td colspan="7" class="no-data">暂无操作日志</td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+function filterLog() {
+    const userId = document.getElementById('user-filter').value;
+    const operateType = document.getElementById('operate-type').value;
+    const startDate = document.getElementById('start-date').value;
+    const endDate = document.getElementById('end-date').value;
+    
+    let url = "{{ url_for('system.log_list') }}?";
+    if (userId) url += `user_id=${userId}&`;
+    if (operateType) url += `operate_type=${operateType}&`;
+    if (startDate) url += `start_time=${startDate}&`;
+    if (endDate) url += `end_time=${endDate}&`;
+    
+    window.location.href = url.slice(0, -1);
+}
+</script>
+{% endblock %}

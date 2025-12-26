@@ -1,0 +1,438 @@
+{% extends "base.html" %}
+{% block title %}部件管理{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* 部件列表页面样式 */
+    .page-container {
+        padding: 20px;
+        background-color: var(--bg-primary);
+        min-height: calc(100vh - 80px);
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        padding: 16px 20px;
+        background-color: var(--bg-card);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .page-header h2 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 20px;
+        background: linear-gradient(180deg, var(--primary-color), var(--primary-hover));
+        color: white;
+        border: none;
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: var(--transition-base);
+        box-shadow: 0 2px 4px rgba(24, 144, 255, 0.2);
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(180deg, var(--primary-hover), #0050b3);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(24, 144, 255, 0.3);
+        color: white;
+    }
+
+    /* 筛选区域 */
+    .filter-section {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        align-items: center;
+        margin-bottom: 20px;
+        padding: 16px 20px;
+        background-color: var(--bg-card);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .filter-item {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-width: 180px;
+    }
+
+    .filter-item label {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text-secondary);
+    }
+
+    .filter-item select,
+    .filter-item input {
+        padding: 8px 12px;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        font-size: 14px;
+        transition: var(--transition-base);
+    }
+
+    .filter-item select:focus,
+    .filter-item input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(24, 144, 255, 0.1);
+    }
+
+    /* 表格容器 */
+    .table-container {
+        background-color: var(--bg-card);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+    }
+
+    /* 数据表格 */
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+
+    .data-table thead {
+        background: linear-gradient(180deg, #fafbfc, #f5f7fa);
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .data-table th, .data-table td {
+        padding: 12px 16px;
+        text-align: left;
+        color: var(--text-primary);
+    }
+
+    .data-table th {
+        font-weight: 600;
+        color: var(--text-primary);
+        white-space: nowrap;
+    }
+
+    .data-table tbody tr {
+        border-bottom: 1px solid var(--border-color);
+        transition: var(--transition-base);
+    }
+
+    .data-table tbody tr:hover {
+        background-color: rgba(24, 144, 255, 0.02);
+    }
+
+    .data-table tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    /* 操作按钮组 */
+    .btn-group {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: nowrap;
+    }
+
+    .btn-icon {
+        padding: 6px 12px;
+        border: 1px solid var(--border-color);
+        background-color: var(--bg-card);
+        border-radius: var(--radius-sm);
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-size: 12px;
+        transition: var(--transition-base);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .btn-icon:hover {
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+        background-color: rgba(24, 144, 255, 0.05);
+    }
+
+    .btn-icon.view {
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+    }
+
+    .btn-icon.view:hover {
+        background-color: var(--primary-light);
+    }
+
+    .btn-icon.edit {
+        border-color: var(--warning-color);
+        color: var(--warning-color);
+    }
+
+    .btn-icon.edit:hover {
+        background-color: var(--warning-light);
+    }
+
+    .btn-icon.delete {
+        border-color: var(--danger-color);
+        color: var(--danger-color);
+    }
+
+    .btn-icon.delete:hover {
+        background-color: var(--danger-light);
+    }
+
+    /* 无数据提示 */
+    .no-data {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--text-tertiary);
+        font-size: 14px;
+    }
+
+    .no-data::before {
+        content: "🔧";
+        display: block;
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.5;
+    }
+
+    /* 分页样式 */
+    .pagination {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 24px;
+        padding: 16px 0;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .pagination-info {
+        font-size: 14px;
+        color: var(--text-secondary);
+    }
+
+    .pagination-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .page-btn {
+        padding: 6px 12px;
+        border: 1px solid var(--border-color);
+        background-color: var(--bg-color);
+        color: var(--text-primary);
+        border-radius: 4px;
+        cursor: pointer;
+        text-decoration: none;
+        font-size: 14px;
+        transition: all 0.2s ease;
+    }
+
+    .page-btn:hover:not(.disabled):not(.active) {
+        background-color: var(--bg-hover);
+        border-color: var(--primary-color);
+    }
+
+    .page-btn.active {
+        background-color: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+    }
+
+    .page-btn.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .page-ellipsis {
+        margin: 0 8px;
+        color: var(--text-secondary);
+    }
+
+    /* 响应式设计 */
+    @media (max-width: 768px) {
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .data-table {
+            min-width: 800px;
+        }
+
+        .filter-section {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .filter-item {
+            min-width: auto;
+        }
+
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 16px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="page-container">
+        <!-- 页面头部 -->
+        <div class="page-header">
+            <h2>设备部件管理</h2>
+            <a href="{{ url_for('base_info.part_add') }}" class="btn-primary">
+                <span>+</span> 新增部件
+            </a>
+        </div>
+
+        <!-- 筛选区域 -->
+        <div class="filter-section">
+            <div class="filter-item">
+                <label>所属设备</label>
+                <select id="equipment-filter" onchange="filterPart()">
+                    <option value="">所有设备</option>
+                    {% for eq in equipments %}
+                    <option value="{{ eq.ID }}" {% if selected_equipment == eq.ID|string %}selected{% endif %}>
+                        {{ eq.Name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-item">
+                <label>搜索部件</label>
+                <input type="text" id="search-input" placeholder="部件名称..." onkeyup="searchPart()">
+            </div>
+        </div>
+
+        <!-- 部件列表表格 -->
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>序号</th>
+                        <th>部件ID</th>
+                        <th>所属设备</th>
+                        <th>部件名称</th>
+                        <th>部件描述</th>
+                        <th>监测点数量</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="partTableBody">
+                    {% if parts %}
+                    {% for part in parts %}
+                    <tr>
+                        <td>{{ (page-1)*page_size + loop.index }}</td>
+                        <td>{{ part.ID }}</td>
+                        <td>{{ part.equipment_name }}</td>
+                        <td>{{ part.Part_Name }}</td>
+                        <td>{{ part.Description or '无' }}</td>
+                        <td>{{ part.monitor_points|length }}</td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{{ url_for('base_info.part_edit', part_id=part.ID) }}" class="btn-icon edit">
+                                    <span>✏️</span> 编辑
+                                </a>
+                                <a href="javascript:;" onclick="deletePart({{ part.ID }})" class="btn-icon delete">
+                                    <span>🗑️</span> 删除
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="no-data">暂无部件信息</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 分页控件 -->
+        {% if total_pages > 1 %}
+        <div class="pagination">
+            <div class="pagination-info">
+                共 {{ total_count }} 条记录，第 {{ page }}/{{ total_pages }} 页
+            </div>
+            <div class="pagination-controls">
+                <a href="{{ url_for('base_info.part_list', page=1, equipment_id=selected_equipment) }}" class="page-btn {% if page == 1 %}disabled{% endif %}">
+                    首页
+                </a>
+                <a href="{{ url_for('base_info.part_list', page=page-1 if page > 1 else 1, equipment_id=selected_equipment) }}" class="page-btn {% if page == 1 %}disabled{% endif %}">
+                    上一页
+                </a>
+                
+                <!-- 页码导航 -->
+                {% if start_page > 1 %}
+                <span class="page-ellipsis">...</span>
+                {% endif %}
+                
+                {% for p in range(start_page, end_page+1) %}
+                <a href="{{ url_for('base_info.part_list', page=p, equipment_id=selected_equipment) }}" class="page-btn {% if page == p %}active{% endif %}">
+                    {{ p }}
+                </a>
+                {% endfor %}
+                
+                {% if end_page < total_pages %}
+                <span class="page-ellipsis">...</span>
+                {% endif %}
+                
+                <a href="{{ url_for('base_info.part_list', page=page+1 if page < total_pages else total_pages, equipment_id=selected_equipment) }}" class="page-btn {% if page == total_pages %}disabled{% endif %}">
+                    下一页
+                </a>
+                <a href="{{ url_for('base_info.part_list', page=total_pages, equipment_id=selected_equipment) }}" class="page-btn {% if page == total_pages %}disabled{% endif %}">
+                    末页
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function filterPart() {
+            const equipmentId = document.getElementById('equipment-filter').value;
+            let url = "{{ url_for('base_info.part_list') }}?";
+            if (equipmentId) url += `equipment_id=${equipmentId}&`;
+            url += `page={{ page }}`;
+            window.location.href = url;
+        }
+
+        function searchPart() {
+            const keyword = document.getElementById('search-input').value.toLowerCase();
+            const rows = document.querySelectorAll('#partTableBody tr');
+            
+            rows.forEach(row => {
+                const name = row.querySelector('td:nth-child(4)').textContent.toLowerCase();
+                row.style.display = name.includes(keyword) ? '' : 'none';
+            });
+        }
+
+        function deletePart(partId) {
+            console.log('删除部件，ID：' + partId);
+            const deleteUrl = "/base-info/part/delete/" + partId;
+            if (confirm('确定要删除该部件吗？删除后将无法恢复。')) {
+                window.location.href = deleteUrl;
+            }
+        }
+    </script>
+{% endblock %}

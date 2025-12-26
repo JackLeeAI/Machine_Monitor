@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}修改密码{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2>修改密码</h2>
+</div>
+<form method="POST" action="{{ url_for('auth.change_pwd') }}" onsubmit="return validateForm('changePwdForm')">
+    <div class="form-group">
+        <label for="old_pwd">原密码</label>
+        <input type="password" id="old_pwd" name="old_pwd" required placeholder="请输入原密码">
+    </div>
+    <div class="form-group">
+        <label for="new_pwd">新密码</label>
+        <input type="password" id="new_pwd" name="new_pwd" required placeholder="请输入新密码（至少6位）">
+    </div>
+    <div class="form-group">
+        <label for="confirm_new_pwd">确认新密码</label>
+        <input type="password" id="confirm_new_pwd" name="confirm_new_pwd" required placeholder="请再次输入新密码">
+    </div>
+    <div class="form-actions">
+        <button type="submit" class="btn-submit">保存修改</button>
+        <a href="{{ url_for('monitor.realtime') }}" class="btn-cancel">取消</a>
+    </div>
+</form>
+{% endblock %}
+{% block extra_js %}
+<script>
+document.querySelector('form').addEventListener('submit', function(e) {
+    const newPwd = document.getElementById('new_pwd').value;
+    const confirmNewPwd = document.getElementById('confirm_new_pwd').value;
+    
+    if (newPwd.length < 6) {
+        alert('新密码长度不能少于6位！');
+        e.preventDefault();
+        return false;
+    }
+    
+    if (newPwd !== confirmNewPwd) {
+        alert('两次输入的新密码不一致！');
+        e.preventDefault();
+        return false;
+    }
+    
+    return true;
+});
+</script>
+{% endblock %}

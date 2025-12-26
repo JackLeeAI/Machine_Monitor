@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}基础信息管理{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* 基础信息主页面样式 */
+    .module-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 24px;
+        margin-top: 24px;
+    }
+
+    .module-card {
+        background-color: var(--bg-card);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-md);
+        padding: 24px;
+        text-decoration: none;
+        color: var(--text-primary);
+        transition: var(--transition-base);
+        border: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .module-card:hover {
+        box-shadow: var(--shadow-lg);
+        transform: translateY(-2px);
+        border-color: var(--primary-color);
+    }
+
+    .module-icon {
+        width: 64px;
+        height: 64px;
+        background-color: var(--primary-color);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 16px;
+        color: white;
+        font-size: 24px;
+    }
+
+    .module-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .module-desc {
+        font-size: 14px;
+        color: var(--text-secondary);
+        line-height: 1.5;
+    }
+
+    .stats-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .stat-card {
+        background-color: var(--bg-card);
+        border-radius: var(--radius-md);
+        padding: 20px;
+        box-shadow: var(--shadow-sm);
+        border-left: 4px solid var(--primary-color);
+    }
+
+    .stat-number {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--primary-color);
+        margin-bottom: 4px;
+    }
+
+    .stat-label {
+        font-size: 14px;
+        color: var(--text-secondary);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="page-container">
+        <div class="page-header">
+            <h2>基础信息管理</h2>
+        </div>
+
+        <!-- 统计卡片 -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-number">{{ workshop_count }}</div>
+                <div class="stat-label">车间总数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ equipment_count }}</div>
+                <div class="stat-label">设备总数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ online_count }}</div>
+                <div class="stat-label">在线设备</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ part_count }}</div>
+                <div class="stat-label">部件总数</div>
+            </div>
+        </div>
+
+        <!-- 模块网格 -->
+        <div class="module-grid">
+            <a href="{{ url_for('base_info.workshop_list') }}" class="module-card">
+                <div class="module-icon">🏭</div>
+                <div class="module-title">车间管理</div>
+                <div class="module-desc">管理车间信息，包括新增、编辑、删除车间，查看车间设备分布</div>
+            </a>
+            <a href="{{ url_for('base_info.equipment_list') }}" class="module-card">
+                <div class="module-icon">⚙️</div>
+                <div class="module-title">设备管理</div>
+                <div class="module-desc">管理设备信息，包括设备的新增、编辑、删除，查看设备状态和详情</div>
+            </a>
+            <a href="{{ url_for('base_info.part_list') }}" class="module-card">
+                <div class="module-icon">🔧</div>
+                <div class="module-title">部件管理</div>
+                <div class="module-desc">管理设备部件信息，包括部件的新增、编辑、删除，查看部件关联</div>
+            </a>
+            {% if session.role == '管理员' %}
+            <a href="{{ url_for('system.user_manage') }}" class="module-card">
+                <div class="module-icon">👥</div>
+                <div class="module-title">人员管理</div>
+                <div class="module-desc">管理系统用户和操作人员信息，设置用户角色和权限</div>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,126 @@
+{% extends "base.html" %}  <!-- 继承基础模板，保持页面风格统一 -->
+{% block title %}页面出错了{% endblock %}
+
+{% block extra_css %}
+<style>
+/* 错误页面容器 */
+.error-container {
+    min-height: calc(100vh - 80px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8f9fa;
+    padding: 20px;
+}
+
+/* 错误卡片 */
+.error-card {
+    max-width: 500px;
+    width: 100%;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+    padding: 40px 30px;
+    text-align: center;
+}
+
+/* 错误图标 */
+.error-icon {
+    font-size: 60px;
+    color: #dc3545;
+    margin-bottom: 20px;
+}
+
+/* 错误标题 */
+.error-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: #343a40;
+    margin-bottom: 15px;
+}
+
+/* 错误描述 */
+.error-desc {
+    font-size: 14px;
+    color: #6c757d;
+    line-height: 1.6;
+    margin-bottom: 30px;
+}
+
+/* 错误详情（可选，调试用） */
+.error-detail {
+    font-size: 12px;
+    color: #dc3545;
+    background-color: #f8d7da;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    text-align: left;
+    max-height: 200px;
+    overflow-y: auto;
+    display: {% if error_detail %}block{% else %}none{% endif %};
+}
+
+/* 返回按钮 */
+.error-btn {
+    display: inline-block;
+    padding: 10px 24px;
+    background-color: #007bff;
+    color: white;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.error-btn:hover {
+    background-color: #0056b3;
+    color: white;
+    text-decoration: none;
+}
+
+/* 响应式适配 */
+@media (max-width: 576px) {
+    .error-card {
+        padding: 30px 20px;
+    }
+    .error-icon {
+        font-size: 40px;
+    }
+    .error-title {
+        font-size: 18px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="error-container">
+    <div class="error-card">
+        <!-- 错误图标（使用字体图标，无需图片） -->
+        <div class="error-icon">❌</div>
+        
+        <!-- 错误标题（可通过参数自定义） -->
+        <h3 class="error-title">{{ error_title or "哎呀，页面出错了！" }}</h3>
+        
+        <!-- 错误描述（可通过参数自定义） -->
+        <p class="error-desc">
+            {{ error_msg or "系统遇到了一些问题，请稍后重试，或联系管理员处理。" }}
+        </p>
+        
+        <!-- 错误详情（仅调试环境显示，可选） -->
+        {% if error_detail %}
+        <div class="error-detail">
+            <strong>错误详情：</strong><br>
+            {{ error_detail }}
+        </div>
+        {% endif %}
+        
+        <!-- 返回按钮（默认返回首页，可自定义跳转地址） -->
+        <a href="{{ back_url or url_for('index') }}" class="error-btn">
+            {{ btn_text or "返回首页" }}
+        </a>
+    </div>
+</div>
+{% endblock %}

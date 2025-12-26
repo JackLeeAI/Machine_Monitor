@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% block title %}新增设备{% endblock %}
+
+{# 页面专属样式 #}
+{% block extra_css %}
+<style>
+/* 页面容器 */
+.equipment-add-container {
+    padding: 20px;
+    background-color: #f8f9fa;
+    min-height: calc(100vh - 80px);
+}
+
+/* 表单卡片 */
+.form-card {
+    max-width: 600px;
+    margin: 0 auto;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+    padding: 30px;
+}
+
+/* 表单标题 */
+.form-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #343a40;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+/* 表单组样式 */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #495057;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.form-group input, .form-group select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 14px;
+    color: #343a40;
+    transition: border-color 0.2s;
+}
+
+.form-group input:focus, .form-group select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* 错误提示 */
+.error-tip {
+    color: #dc3545;
+    font-size: 12px;
+    margin-top: 5px;
+    display: none;
+}
+
+/* 必填项星号 */
+.required {
+    color: #dc3545;
+    margin-left: 2px;
+}
+
+/* 按钮组 */
+.btn-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 30px;
+}
+
+.btn-submit {
+    padding: 8px 20px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    flex: 1;
+}
+
+.btn-submit:hover {
+    background-color: #218838;
+}
+
+.btn-cancel {
+    padding: 8px 20px;
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    text-decoration: none;
+    text-align: center;
+    flex: 1;
+}
+
+.btn-cancel:hover {
+    background-color: #5a6268;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="equipment-add-container">
+    <div class="form-card">
+        <div class="form-title">新增设备</div>
+        
+        <form method="POST" action="{{ url_for('base_info.equipment_add') }}">
+            <!-- 设备编码 -->
+            <div class="form-group">
+                <label for="equip_code">设备编码 <span class="required">*</span></label>
+                <input type="text" id="equip_code" name="equip_code" required placeholder="请输入设备编码">
+            </div>
+            
+            <!-- 设备名称 -->
+            <div class="form-group">
+                <label for="name">设备名称 <span class="required">*</span></label>
+                <input type="text" id="name" name="name" required placeholder="请输入设备名称">
+            </div>
+            
+            <!-- 所属车间 -->
+            <div class="form-group">
+                <label for="pos_id">所属车间 <span class="required">*</span></label>
+                <select id="pos_id" name="pos_id" required>
+                    <option value="">请选择车间</option>
+                    {% for workshop in workshops %}
+                    <option value="{{ workshop.id }}">{{ workshop.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- 负责人 -->
+            <div class="form-group">
+                <label for="person_id">负责人 <span class="required">*</span></label>
+                <select id="person_id" name="person_id" required>
+                    <option value="">请选择负责人</option>
+                    {% for staff in staffs %}
+                    <option value="{{ staff.id }}">{{ staff.name }} ({{ staff.per_pos }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- 购置日期 -->
+            <div class="form-group">
+                <label for="pur_date">购置日期 <span class="required">*</span></label>
+                <input type="date" id="pur_date" name="pur_date" required>
+            </div>
+            
+            <!-- 首次使用日期 -->
+            <div class="form-group">
+                <label for="first_time">首次使用日期 <span class="required">*</span></label>
+                <input type="date" id="first_time" name="first_time" required>
+            </div>
+            
+            <!-- 使用状态 -->
+            <div class="form-group">
+                <label for="use_state">使用状态</label>
+                <select id="use_state" name="use_state">
+                    <option value="在用" selected>在用</option>
+                    <option value="在库">在库</option>
+                    <option value="停用">停用</option>
+                </select>
+            </div>
+            
+            <!-- 按钮组 -->
+            <div class="btn-group">
+                <button type="submit" class="btn-submit">保存</button>
+                <a href="{{ url_for('base_info.equipment_list') }}" class="btn-cancel">取消</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 表单提交前的简单验证
+document.querySelector('form').addEventListener('submit', function(e) {
+    // 验证设备编码
+    const equipCode = document.getElementById('equip_code').value;
+    if (!equipCode) {
+        alert('请输入设备编码');
+        e.preventDefault();
+        return false;
+    }
+    
+    // 验证设备名称
+    const name = document.getElementById('name').value;
+    if (!name) {
+        alert('请输入设备名称');
+        e.preventDefault();
+        return false;
+    }
+    
+    // 验证车间选择
+    const posId = document.getElementById('pos_id').value;
+    if (!posId) {
+        alert('请选择所属车间');
+        e.preventDefault();
+        return false;
+    }
+    
+    // 验证负责人选择
+    const personId = document.getElementById('person_id').value;
+    if (!personId) {
+        alert('请选择负责人');
+        e.preventDefault();
+        return false;
+    }
+    
+    return true;
+});
+</script>
+{% endblock %}

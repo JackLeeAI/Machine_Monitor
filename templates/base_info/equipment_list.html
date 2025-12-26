@@ -1,0 +1,399 @@
+{% extends "base.html" %}
+{% block title %}设备管理{% endblock %}
+
+{% block extra_css %}
+<style>
+/* 页面容器 */
+.page-container {
+    padding: 20px;
+    background-color: #f8f9fa;
+    min-height: calc(100vh - 80px);
+}
+
+/* 页面标题栏 */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+}
+
+.page-header h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #343a40;
+}
+
+/* 按钮样式 */
+.btn-add {
+    padding: 8px 20px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+}
+
+.btn-add:hover {
+    background-color: #218838;
+    color: white;
+    text-decoration: none;
+}
+
+/* 分页样式 */
+.pagination-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    padding: 10px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+}
+
+.pagination-info {
+    font-size: 14px;
+    color: #6c757d;
+}
+
+.pagination {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.page-btn {
+    padding: 6px 12px;
+    border: 1px solid #dee2e6;
+    background-color: white;
+    color: #007bff;
+    text-decoration: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.page-btn:hover:not(.disabled) {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.page-btn.current {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.page-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.page-btn.first, .page-btn.last {
+    font-weight: bold;
+}
+
+/* 筛选栏 */
+.filter-bar {
+    display: flex;
+    gap: 15px;
+    padding: 15px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.filter-bar select,
+.filter-bar input {
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: border-color 0.3s ease;
+}
+
+.filter-bar select:focus,
+.filter-bar input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+/* 表格容器 */
+.data-table-container {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+/* 数据表格 */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.data-table th {
+    background-color: #f8f9fa;
+    font-weight: 500;
+    color: #495057;
+    font-size: 14px;
+}
+
+.data-table td {
+    color: #343a40;
+    font-size: 14px;
+}
+
+/* 状态标签 */
+.status-using {
+    padding: 2px 8px;
+    background-color: #d4edda;
+    color: #155724;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-stock {
+    padding: 2px 8px;
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-online {
+    padding: 2px 8px;
+    background-color: #d4edda;
+    color: #155724;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-offline {
+    padding: 2px 8px;
+    background-color: #f8d7da;
+    color: #721c24;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* 操作按钮 */
+.btn-operate {
+    padding: 4px 10px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 12px;
+    transition: all 0.3s ease;
+    margin-right: 5px;
+}
+
+.btn-operate.view {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.btn-operate.view:hover {
+    background-color: #138496;
+    color: white;
+}
+
+.btn-operate.edit {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.btn-operate.edit:hover {
+    background-color: #e0a800;
+}
+
+.btn-operate.delete {
+    background-color: #dc3545;
+    color: white;
+}
+
+.btn-operate.delete:hover {
+    background-color: #c82333;
+    color: white;
+}
+
+/* 空数据提示 */
+.no-data {
+    text-align: center;
+    padding: 40px 0;
+    color: #6c757d;
+    font-size: 14px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header">
+        <h2>设备信息管理</h2>
+        <a href="{{ url_for('base_info.equipment_add') }}" class="btn-add">新增设备</a>
+    </div>
+    <div class="filter-bar">
+        <select id="workshop-filter" onchange="filterEquipment()">
+            <option value="">所有车间</option>
+            {% for workshop in workshops %}
+            <option value="{{ workshop.id }}" {% if selected_workshop == workshop.id|string %}selected{% endif %}>{{ workshop.name }}</option>
+            {% endfor %}
+        </select>
+        <select id="use-state-filter" onchange="filterEquipment()">
+            <option value="">所有使用状态</option>
+            <option value="在用" {% if selected_use_state == '在用' %}selected{% endif %}>在用</option>
+            <option value="在库" {% if selected_use_state == '在库' %}selected{% endif %}>在库</option>
+        </select>
+        <input type="text" id="search-input" placeholder="搜索设备名称/编码" onkeyup="searchEquipment()">
+    </div>
+<div class="data-table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>序号</th>
+                <th>设备ID</th>
+                <th>设备编码</th>
+                <th>设备名称</th>
+                <th>所属车间</th>
+                <th>负责人</th>
+                <th>使用状态</th>
+                <th>在线状态</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if equipments %}
+            {% for eq in equipments %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ eq.id }}</td>
+                <td>{{ eq.equip_code }}</td>
+                <td>{{ eq.name }}</td>
+                <td>{{ eq.pos_name }}</td>
+                <td>{{ eq.person_name }}</td>
+                <td>{{ eq.use_state }}</td>
+                <td>
+                    <span class="state-tag {{ eq.online_status.lower() }}">
+                        {{ eq.online_status }}
+                    </span>
+                </td>
+                <td>
+                    <a href="{{ url_for('base_info.equipment_detail', eq_id=eq.id) }}" class="btn-operate view">详情</a>
+                    <a href="{{ url_for('base_info.equipment_edit', eq_id=eq.id) }}" class="btn-operate edit">编辑</a>
+                    <a href="javascript:;" onclick="deleteEquipment({{ eq.id }})" class="btn-operate delete">删除</a>
+                </td>
+            </tr>
+            {% endfor %}
+            {% else %}
+            <tr>
+                <td colspan="9" class="no-data">暂无设备信息</td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+    
+    <!-- 分页控件 -->
+    {% if total_pages > 0 %}
+    <div class="pagination-container">
+        <div class="pagination-info">
+            共 {{ total_count }} 条记录，第 {{ page }}/{{ total_pages }} 页
+        </div>
+        <div class="pagination">
+            <a href="{{ url_for('base_info.equipment_list', page=1, workshop_id=selected_workshop, use_state=selected_use_state) }}" class="page-btn first">首页</a>
+            {% if page > 1 %}
+            <a href="{{ url_for('base_info.equipment_list', page=page-1, workshop_id=selected_workshop, use_state=selected_use_state) }}" class="page-btn prev">上一页</a>
+            {% else %}
+            <span class="page-btn prev disabled">上一页</span>
+            {% endif %}
+            
+            <!-- 页码 -->
+            {% set start_page = (1, page - 2)|max %}
+            {% set end_page = (total_pages, page + 2)|min %}
+            
+            {% if start_page > 1 %}
+            <span class="page-btn">...</span>
+            {% endif %}
+            
+            {% for p in range(start_page, end_page + 1) %}
+            {% if p == page %}
+            <span class="page-btn current">{{ p }}</span>
+            {% else %}
+            <a href="{{ url_for('base_info.equipment_list', page=p, workshop_id=selected_workshop, use_state=selected_use_state) }}" class="page-btn">{{ p }}</a>
+            {% endif %}
+            {% endfor %}
+            
+            {% if end_page < total_pages %}
+            <span class="page-btn">...</span>
+            {% endif %}
+            
+            {% if page < total_pages %}
+            <a href="{{ url_for('base_info.equipment_list', page=page+1, workshop_id=selected_workshop, use_state=selected_use_state) }}" class="page-btn next">下一页</a>
+            {% else %}
+            <span class="page-btn next disabled">下一页</span>
+            {% endif %}
+            <a href="{{ url_for('base_info.equipment_list', page=total_pages, workshop_id=selected_workshop, use_state=selected_use_state) }}" class="page-btn last">末页</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+function filterEquipment() {
+    const workshopId = document.getElementById('workshop-filter').value;
+    const useState = document.getElementById('use-state-filter').value;
+    
+    let url = "{{ url_for('base_info.equipment_list') }}?";
+    if (workshopId) url += `workshop_id=${workshopId}&`;
+    if (useState) url += `use_state=${useState}&`;
+    url += `page=1`;  // 筛选时回到第一页
+    
+    window.location.href = url;
+}
+
+function searchEquipment() {
+    const keyword = document.getElementById('search-input').value.toLowerCase();
+    const rows = document.querySelectorAll('.data-table tbody tr');
+    
+    rows.forEach(row => {
+        const name = row.querySelector('td:nth-child(4)').textContent.toLowerCase();
+        const code = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+        row.style.display = (name.includes(keyword) || code.includes(keyword)) ? 'table-row' : 'none';
+    });
+}
+
+function deleteEquipment(equipmentId) {
+            console.log('删除设备，ID：' + equipmentId);
+            if (confirm('确定要删除该设备吗？删除后将无法恢复。')) {
+                window.location.href = "/base-info/equipment/delete/" + equipmentId;
+            }
+        }
+</script>
+{% endblock %}

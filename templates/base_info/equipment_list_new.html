@@ -1,0 +1,422 @@
+{% extends "base.html" %}
+{% block title %}设备管理{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* 设备列表页面样式 */
+    .page-container {
+        padding: 20px;
+        background-color: var(--bg-primary);
+        min-height: calc(100vh - 80px);
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        padding: 16px 20px;
+        background-color: var(--bg-card);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .page-header h2 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 20px;
+        background: linear-gradient(180deg, var(--primary-color), var(--primary-hover));
+        color: white;
+        border: none;
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: var(--transition-base);
+        box-shadow: 0 2px 4px rgba(24, 144, 255, 0.2);
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(180deg, var(--primary-hover), #0050b3);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(24, 144, 255, 0.3);
+        color: white;
+    }
+
+    /* 筛选区域 */
+    .filter-section {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        align-items: center;
+        margin-bottom: 20px;
+        padding: 16px 20px;
+        background-color: var(--bg-card);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .filter-item {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-width: 180px;
+    }
+
+    .filter-item label {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text-secondary);
+    }
+
+    .filter-item select,
+    .filter-item input {
+        padding: 8px 12px;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        font-size: 14px;
+        transition: var(--transition-base);
+    }
+
+    .filter-item select:focus,
+    .filter-item input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(24, 144, 255, 0.1);
+    }
+
+    /* 表格容器 */
+    .table-container {
+        background-color: var(--bg-card);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+    }
+
+    /* 数据表格 */
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+
+    .data-table thead {
+        background: linear-gradient(180deg, #fafbfc, #f5f7fa);
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .data-table th, .data-table td {
+        padding: 12px 16px;
+        text-align: left;
+        color: var(--text-primary);
+    }
+
+    .data-table th {
+        font-weight: 600;
+        color: var(--text-primary);
+        white-space: nowrap;
+    }
+
+    .data-table tbody tr {
+        border-bottom: 1px solid var(--border-color);
+        transition: var(--transition-base);
+    }
+
+    .data-table tbody tr:hover {
+        background-color: rgba(24, 144, 255, 0.02);
+    }
+
+    .data-table tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    /* 状态标签 */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+
+    .status-badge.online {
+        background-color: var(--success-light);
+        color: var(--success-color);
+        border: 1px solid var(--success-color);
+    }
+
+    .status-badge.offline {
+        background-color: var(--danger-light);
+        color: var(--danger-color);
+        border: 1px solid var(--danger-color);
+    }
+
+    .status-badge.using {
+        background-color: var(--primary-light);
+        color: var(--primary-color);
+        border: 1px solid var(--primary-color);
+    }
+
+    .status-badge.stock {
+        background-color: var(--warning-light);
+        color: var(--warning-color);
+        border: 1px solid var(--warning-color);
+    }
+
+    /* 操作按钮组 */
+    .btn-group {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: nowrap;
+    }
+
+    .btn-icon {
+        padding: 6px 12px;
+        border: 1px solid var(--border-color);
+        background-color: var(--bg-card);
+        border-radius: var(--radius-sm);
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-size: 12px;
+        transition: var(--transition-base);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .btn-icon:hover {
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+        background-color: rgba(24, 144, 255, 0.05);
+    }
+
+    .btn-icon.view {
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+    }
+
+    .btn-icon.view:hover {
+        background-color: var(--primary-light);
+    }
+
+    .btn-icon.edit {
+        border-color: var(--warning-color);
+        color: var(--warning-color);
+    }
+
+    .btn-icon.edit:hover {
+        background-color: var(--warning-light);
+    }
+
+    .btn-icon.delete {
+        border-color: var(--danger-color);
+        color: var(--danger-color);
+    }
+
+    .btn-icon.delete:hover {
+        background-color: var(--danger-light);
+    }
+
+    /* 无数据提示 */
+    .no-data {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--text-tertiary);
+        font-size: 14px;
+    }
+
+    .no-data::before {
+        content: "📱";
+        display: block;
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.5;
+    }
+
+    /* 响应式设计 */
+    @media (max-width: 768px) {
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .data-table {
+            min-width: 800px;
+        }
+
+        .filter-section {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .filter-item {
+            min-width: auto;
+        }
+
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 16px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="page-container">
+        <!-- 页面头部 -->
+        <div class="page-header">
+            <h2>设备管理</h2>
+            <a href="{{ url_for('base_info.equipment_add') }}" class="btn-primary">
+                <span>+</span> 新增设备
+            </a>
+        </div>
+
+        <!-- 筛选区域 -->
+        <div class="filter-section">
+            <div class="filter-item">
+                <label>设备状态</label>
+                <select id="statusFilter">
+                    <option value="">全部状态</option>
+                    <option value="在用">在用</option>
+                    <option value="在库">在库</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <label>在线状态</label>
+                <select id="onlineFilter">
+                    <option value="">全部状态</option>
+                    <option value="在线">在线</option>
+                    <option value="离线">离线</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <label>搜索设备</label>
+                <input type="text" id="searchInput" placeholder="设备名称/编码...">
+            </div>
+        </div>
+
+        <!-- 设备列表表格 -->
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>序号</th>
+                        <th>设备编码</th>
+                        <th>设备名称</th>
+                        <th>所属车间</th>
+                        <th>负责人</th>
+                        <th>使用状态</th>
+                        <th>在线状态</th>
+                        <th>最后心跳</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="equipmentTableBody">
+                    {% if equipments and equipments|length > 0 %}
+                        {% for equip in equipments %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>{{ equip.equip_code }}</td>
+                                <td>{{ equip.name }}</td>
+                                <td>{{ equip.workshop_name }}</td>
+                                <td>{{ equip.person_name }}</td>
+                                <td>
+                                    <span class="status-badge {{ 'using' if equip.use_state == '在用' else 'stock' }}">
+                                        {{ equip.use_state }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="status-badge {{ 'online' if equip.online_status == '在线' else 'offline' }}">
+                                        {{ equip.online_status }}
+                                    </span>
+                                </td>
+                                <td>{{ equip.last_heartbeat if equip.last_heartbeat else '无' }}</td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="{{ url_for('base_info.equipment_detail', eq_id=equip.id) }}" class="btn-icon view">
+                                            <span>👁️</span> 详情
+                                        </a>
+                                        <a href="{{ url_for('base_info.equipment_edit', eq_id=equip.id) }}" class="btn-icon edit">
+                                            <span>✏️</span> 编辑
+                                        </a>
+                                        <button type="button" class="btn-icon delete" onclick="deleteEquipment({{ equip.id }})"><span>🗑️</span> 删除</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="9" class="no-data">
+                                暂无设备信息
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // 筛选和搜索功能
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchInput');
+            const statusFilter = document.getElementById('statusFilter');
+            const onlineFilter = document.getElementById('onlineFilter');
+            const tableRows = document.querySelectorAll('#equipmentTableBody tr');
+            
+            function filterTable() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const statusValue = statusFilter.value;
+                const onlineValue = onlineFilter.value;
+                
+                tableRows.forEach(row => {
+                    const cells = row.querySelectorAll('td');
+                    if (cells.length > 0) {
+                        const equipCode = cells[1].textContent.toLowerCase();
+                        const equipName = cells[2].textContent.toLowerCase();
+                        const equipStatus = cells[5].textContent;
+                        const onlineStatus = cells[6].textContent;
+                        
+                        const matchesSearch = equipCode.includes(searchTerm) || equipName.includes(searchTerm);
+                        const matchesStatus = statusValue === '' || equipStatus.includes(statusValue);
+                        const matchesOnline = onlineValue === '' || onlineStatus.includes(onlineValue);
+                        
+                        row.style.display = (matchesSearch && matchesStatus && matchesOnline) ? '' : 'none';
+                    }
+                });
+            }
+            
+            // 绑定事件监听器
+            searchInput.addEventListener('input', filterTable);
+            statusFilter.addEventListener('change', filterTable);
+            onlineFilter.addEventListener('change', filterTable);
+        });
+
+        // 删除设备确认函数
+        function deleteEquipment(equipmentId) {
+            // 直接构建删除URL
+            const deleteUrl = "/base-info/equipment/delete/" + equipmentId;
+            
+            // 弹出确认对话框
+            if (confirm('确定要删除该设备吗？删除后将无法恢复。')) {
+                // 用户确认，执行删除操作
+                window.location.href = deleteUrl;
+            }
+        }
+      </script>
+{% endblock %}

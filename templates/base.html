@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}机器设备在线监控系统{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{{ url_for('static', filename='js/common.js') }}"></script>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="container">
+        <!-- 导航栏 -->
+        {% if session.user_id %}
+        <nav class="navbar">
+            <div class="logo">机器设备在线监控系统</div>
+            <div class="menu">
+                <a href="{{ url_for('monitor.realtime') }}" class="{% if request.endpoint == 'monitor.realtime' %}active{% endif %}">实时监控</a>
+                <a href="{{ url_for('monitor.history') }}" class="{% if request.endpoint == 'monitor.history' %}active{% endif %}">历史数据</a>
+                <a href="{{ url_for('warning.warning_list') }}" class="{% if request.endpoint == 'warning.warning_list' %}active{% endif %}">预警处理
+                    {% if warning_count and warning_count > 0 %}
+                    <span class="badge">{{ warning_count }}</span>
+                    {% endif %}
+                </a>
+                <a href="{{ url_for('base_info.base_info_main') }}" class="{% if 'base_info' in request.endpoint %}active{% endif %}">基础信息</a>
+                {% if session.role == '管理员' %}
+                <a href="{{ url_for('system.user_manage') }}" class="{% if 'system' in request.endpoint %}active{% endif %}">系统管理</a>
+                {% endif %}
+            </div>
+            <div class="user-info">
+                欢迎：{{ session.username }}（{{ session.role }}） |
+                <a href="{{ url_for('auth.change_pwd') }}">修改密码</a> |
+                <a href="{{ url_for('auth.logout') }}">退出登录</a>
+            </div>
+        </nav>
+        {% endif %}
+
+        <!-- 提示信息 -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, msg in messages %}
+                    <div class="alert {{ category }}">{{ msg }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- 页面内容 -->
+        <div class="content">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

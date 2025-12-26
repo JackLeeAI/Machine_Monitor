@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}部件管理{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2>设备部件管理</h2>
+    <a href="{{ url_for('base_info.part_add') }}" class="btn-add">新增部件</a>
+</div>
+<div class="filter-bar">
+    <select id="equipment-filter" onchange="filterPart()">
+        <option value="">所有设备</option>
+        {% for eq in equipments %}
+        <option value="{{ eq.ID }}" {% if selected_equipment == eq.ID|string %}selected{% endif %}>
+            {{ eq.Name }}
+        </option>
+        {% endfor %}
+    </select>
+    <input type="text" id="search-input" placeholder="搜索部件名称" onkeyup="searchPart()">
+</div>
+<div class="data-table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <<th>序号</</th>
+                <<th>部件ID</</th>
+                <<th>所属设备</</th>
+                <<th>部件名称</</th>
+                <<th>部件描述</</th>
+                <<th>监测点数量</</th>
+                <<th>操作</</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if parts %}
+            {% for part in parts %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ part.ID }}</td>
+                <td>{{ part.equipment_name }}</td>
+                <td>{{ part.Part_Name }}</td>
+                <td>{{ part.Description or '无' }}</td>
+                <td>{{ part.monitor_points|length }}</td>
+                <td>
+                    <a href="{{ url_for('base_info.part_edit', part_id=part.ID) }}" class="btn-operate edit">编辑</a>
+                    <a href="javascript:;" onclick="deletePart({{ part.ID }})" class="btn-operate delete">删除</a>
+                </td>
+            </tr>
+            {% endfor %}
+            {% else %}
+            <tr>
+                <td colspan="7" class="no-data">暂无部件信息</td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+function filterPart() {
+    const equipmentId = document.getElementById('equipment-filter').value;
+    let url = "{{ url_for('base_info.part_list') }}?";
+    if (equipmentId) url += `equipment_id=${equipmentId}&`;
+    window.location.href = url.slice(0, -1);
+}
+
+function searchPart() {
+    const keyword = document.getElementById('search-input').value.toLowerCase();
+    const rows = document.querySelectorAll('.data-table tbody tr');
+    
+    rows.forEach(row => {
+        const name = row.querySelector('td:nth-child(4)').textContent.toLowerCase();
+        row.style.display = name.includes(keyword) ? 'table-row' : 'none';
+    });
+}
+
+function deletePart(partId) {
+            console.log('删除部件，ID：' + partId);
+            const deleteUrl = "/base-info/part/delete/" + partId;
+            if (confirm('确定要删除该部件吗？删除后将无法恢复。')) {
+                window.location.href = deleteUrl;
+            }
+        }
+</script>
+{% endblock %}

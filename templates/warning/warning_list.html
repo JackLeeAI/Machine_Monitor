@@ -1,0 +1,730 @@
+{% extends "base.html" %}
+{% block title %}预警处理{% endblock %}
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- 大屏顶部装饰 -->
+    <div class="screen-header">
+        <div class="screen-title">预警信息列表</div>
+        <div class="screen-time" id="current-time"></div>
+    </div>
+    <div class="mb-4">
+        <p class="text-gray-600">实时监控系统预警信息处理中心</p>
+    </div>
+    <!-- 页面标题和统计信息 -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+        <div class="mb-4 md:mb-0">
+        </div>
+        <div class="stats-container d-flex flex-wrap gap-3">
+            <div class="stat-item card p-3 shadow-sm">
+                <div class="d-flex justify-between items-start">
+                    <div>
+                        <div class="stat-number text-xl font-bold text-primary mb-1">{{ total_count }}</div>
+                        <div class="stat-label text-sm text-gray-500">总预警</div>
+                    </div>
+                    <div class="w-8 h-8 bg-primary/10 rounded-circle d-flex align-items-center justify-center">
+                        <i class="fas fa-bell text-primary"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="stat-item card p-3 shadow-sm">
+                <div class="d-flex justify-between items-start">
+                    <div>
+                        <div class="stat-number text-xl font-bold text-danger mb-1">{{ pending_count }}</div>
+                        <div class="stat-label text-sm text-gray-500">待处理</div>
+                    </div>
+                    <div class="w-8 h-8 bg-danger/10 rounded-circle d-flex align-items-center justify-center">
+                        <i class="fas fa-exclamation-triangle text-danger"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="stat-item card p-3 shadow-sm">
+                <div class="d-flex justify-between items-start">
+                    <div>
+                        <div class="stat-number text-xl font-bold text-warning mb-1">{{ processing_count }}</div>
+                        <div class="stat-label text-sm text-gray-500">处理中</div>
+                    </div>
+                    <div class="w-8 h-8 bg-warning/10 rounded-circle d-flex align-items-center justify-center">
+                        <i class="fas fa-spinner fa-spin text-warning"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="stat-item card p-3 shadow-sm">
+                <div class="d-flex justify-between items-start">
+                    <div>
+                        <div class="stat-number text-xl font-bold text-success mb-1">{{ done_count }}</div>
+                        <div class="stat-label text-sm text-gray-500">已处理</div>
+                    </div>
+                    <div class="w-8 h-8 bg-success/10 rounded-circle d-flex align-items-center justify-center">
+                        <i class="fas fa-check-circle text-success"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 过滤栏 -->
+    <div class="filter-container card p-4 mb-4 shadow-sm">
+        <div class="filter-row d-flex flex-wrap gap-3 align-items-end">
+            <div class="filter-item flex-1 min-w-[200px]">
+                <label for="warning-state" class="block text-sm font-medium text-gray-700 mb-2">预警状态</label>
+                <select 
+                    id="warning-state" 
+                    onchange="filterWarning()"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-primary focus:border-primary"
+                >
+                    <option value="">所有状态</option>
+                    <option value="待处理" {% if selected_state == '待处理' %}selected{% endif %}>待处理</option>
+                    <option value="处理中" {% if selected_state == '处理中' %}selected{% endif %}>处理中</option>
+                    <option value="已处理" {% if selected_state == '已处理' %}selected{% endif %}>已处理</option>
+                </select>
+            </div>
+            
+            <div class="filter-item flex-1 min-w-[200px]">
+                <label for="start-date" class="block text-sm font-medium text-gray-700 mb-2">开始时间</label>
+                <input 
+                    type="date" 
+                    id="start-date" 
+                    onchange="filterWarning()" 
+                    value="{{ selected_start }}"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-primary focus:border-primary"
+                >
+            </div>
+            
+            <div class="filter-item flex-1 min-w-[200px]">
+                <label for="end-date" class="block text-sm font-medium text-gray-700 mb-2">结束时间</label>
+                <input 
+                    type="date" 
+                    id="end-date" 
+                    onchange="filterWarning()" 
+                    value="{{ selected_end }}"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-primary focus:border-primary"
+                >
+            </div>
+            
+
+        </div>
+    </div>
+    
+    <!-- 数据表格 -->
+    <div class="table-container card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover table-bordered">
+                <thead class="thead-light">
+                    <tr>
+                        <th scope="col" class="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                            预警ID
+                        </th>
+                        <th scope="col" class="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                            监测点
+                        </th>
+                        <th scope="col" class="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                            预警内容
+                        </th>
+                        <th scope="col" class="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                            发生时间
+                        </th>
+                        <th scope="col" class="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                            处理人
+                        </th>
+                        <th scope="col" class="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                            处理状态
+                        </th>
+                        <th scope="col" class="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                            处理时间
+                        </th>
+                        <th scope="col" class="px-4 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                            操作
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white">
+                    {% if warnings %}
+                    {% for warning in warnings %}
+                    <tr class="hover:bg-gray-50 transition-all duration-200 {% if warning.msg_state.strip() == '待处理' %}bg-danger/10{% endif %}">
+                        <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {{ warning.id }}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary">
+                            <span class="d-flex items-center">
+                                <i class="fas fa-map-marker-alt text-blue-400/70 mr-2"></i>
+                                {{ warning.mon_name }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 whitespace-normal text-sm text-gray-700 max-w-md">
+                            <div class="line-clamp-2">
+                                {{ warning.msg_text }}
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                            <span class="d-flex items-center">
+                                <i class="fas fa-clock text-gray-500 mr-2"></i>
+                                {{ warning.happen_time }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                            <span class="d-flex items-center">
+                                <i class="fas fa-user text-gray-500 mr-2"></i>
+                                {{ warning.handler_name }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-5 whitespace-nowrap">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium state-badge"
+                                  data-state="{{ warning.msg_state }}">
+                                {% if warning.msg_state.strip() == '待处理' %}
+                                    <i class="fas fa-exclamation-circle mr-1"></i>
+                                    待处理
+                                {% elif warning.msg_state.strip() == '处理中' %}
+                                    <i class="fas fa-spinner fa-spin mr-1"></i>
+                                    处理中
+                                {% else %}
+                                    <i class="fas fa-check-circle mr-1"></i>
+                                    已处理
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                            {{ warning.handle_time }}
+                        </td>
+                        <td class="px-6 py-5 whitespace-nowrap text-right text-sm font-medium">
+                            <a 
+                                href="{{ url_for('warning.warning_handle', warn_id=warning.id) }}" 
+                                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all"
+                            >
+                                {% if warning.msg_state.strip() == '待处理' or warning.msg_state.strip() == '处理中' %}
+                                    <i class="fas fa-tools mr-2"></i>
+                                    处理
+                                {% else %}
+                                    <i class="fas fa-eye mr-2"></i>
+                                    查看
+                                {% endif %}
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr class="empty-row">
+                        <td colspan="8" class="px-6 py-16 text-center">
+                            <div class="empty-state space-y-4">
+                                <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
+                                    <i class="fas fa-bell-slash text-4xl text-gray-400"></i>
+                                </div>
+                                <p class="text-gray-600 text-lg">暂无预警信息</p>
+                                <p class="text-gray-500 text-sm">系统运行正常，没有检测到任何预警</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 记录总数 -->
+        {% if warnings %}
+        <div class="px-4 py-3 border-t border-gray-200 bg-white">
+            <div class="text-sm text-gray-600">
+                共 <span class="font-semibold text-primary">{{ total_count }}</span> 条记录
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+{% block extra_css %}
+<style>
+    /* 基础样式 */
+    body {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 50%, #dee2e6 100%);
+        color: #495057;
+        font-family: 'Microsoft YaHei', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        overflow-x: hidden;
+    }
+    
+    /* 页面容器 */
+    .container-fluid {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1rem;
+    }
+    
+    /* 页面头部 */
+    .screen-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid #007bff;
+    }
+    
+    .screen-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #007bff;
+        margin: 0;
+    }
+    
+    .screen-time {
+        background: #ffffff;
+        border: 1px solid #007bff;
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
+        font-size: 1rem;
+        color: #007bff;
+        box-shadow: 0 2px 8px rgba(0, 123, 255, 0.15);
+    }
+    
+    /* 统计卡片 */
+    .stats-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .stat-item {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 1.25rem;
+        flex: 1 1 calc(25% - 0.75rem);
+        min-width: 180px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .stat-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .stat-number {
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        color: #007bff;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .stat-item .w-8.h-8 {
+        background: rgba(0, 123, 255, 0.1);
+        border: 1px solid rgba(0, 123, 255, 0.2);
+    }
+    
+    /* 过滤栏 */
+    .filter-container {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .filter-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: end;
+    }
+    
+    .filter-item {
+        flex: 1 1 calc(25% - 0.75rem);
+        min-width: 180px;
+    }
+    
+    .filter-item label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: #007bff;
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+    
+    .filter-item select,
+    .filter-item input {
+        width: 100%;
+        padding: 0.625rem 0.75rem;
+        background: #ffffff;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        color: #495057;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+    }
+    
+    .filter-item select:focus,
+    .filter-item input:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+    
+    .filter-item button {
+        width: 100%;
+        padding: 0.625rem 1.25rem;
+        background: #007bff;
+        border: 1px solid #007bff;
+        border-radius: 6px;
+        color: #ffffff;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .filter-item button:hover {
+        background: #0056b3;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 123, 255, 0.2);
+    }
+    
+    /* 表格容器 */
+    .table-container {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 0;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+    
+    .table-container table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    
+    .table-container thead {
+        background: #f8f9fa;
+    }
+    
+    .table-container th {
+        padding: 0.75rem;
+        text-align: left;
+        border-bottom: 2px solid #dee2e6;
+        color: #007bff;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 0.875rem;
+        white-space: nowrap;
+    }
+    
+    .table-container td {
+        padding: 0.75rem;
+        border-bottom: 1px solid #dee2e6;
+        color: #495057;
+        transition: all 0.3s ease;
+    }
+    
+    .table-container tbody tr {
+        transition: all 0.3s ease;
+    }
+    
+    .table-container tbody tr:hover {
+        background: #f8f9fa;
+    }
+    
+    .table-container tbody tr:last-child td {
+        border-bottom: none;
+    }
+    
+    /* 状态标签 */
+    .state-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.375rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        white-space: nowrap;
+    }
+    
+    .state-badge[data-state="待处理"] {
+        background: #ffc107;
+        color: #212529;
+        border: 1px solid #ffc107;
+    }
+    
+    .state-badge[data-state="处理中"] {
+        background: #17a2b8;
+        color: #ffffff;
+        border: 1px solid #17a2b8;
+    }
+    
+    .state-badge[data-state="已处理"] {
+        background: #28a745;
+        color: #ffffff;
+        border: 1px solid #28a745;
+    }
+    
+    /* 操作按钮 */
+    td a {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.5rem 0.75rem;
+        background: #007bff;
+        color: #ffffff;
+        border-radius: 6px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        border: 1px solid #007bff;
+        box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+        font-size: 0.875rem;
+        white-space: nowrap;
+    }
+    
+    td a:hover {
+        background: #0056b3;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+        color: #ffffff;
+        text-decoration: none;
+    }
+    
+    /* 空状态 */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 2rem;
+        color: #6c757d;
+    }
+    
+    .empty-state i {
+        font-size: 3.5rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+    
+
+        
+    }
+    
+    /* 脉冲动画 */
+    @keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+            box-shadow: 0 0 15px rgba(220, 53, 69, 0.3);
+        }
+        50% {
+            opacity: 0.7;
+            box-shadow: 0 0 25px rgba(220, 53, 69, 0.6);
+        }
+    }
+    
+    /* 响应式设计 */
+    @media (max-width: 1200px) {
+        .container-fluid {
+            max-width: 100%;
+            padding: 0.75rem;
+        }
+        
+        .screen-title {
+            font-size: 1.75rem;
+        }
+    }
+    
+    @media (max-width: 992px) {
+        .screen-title {
+            font-size: 1.5rem;
+        }
+        
+        .stat-item {
+            flex: 1 1 calc(50% - 0.5rem);
+        }
+        
+        .table thead th,
+        .table tbody td {
+            padding: 0.75rem 1rem;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .container-fluid {
+            padding: 0.5rem;
+        }
+        
+        .screen-title {
+            font-size: 1.35rem;
+        }
+        
+        .screen-header {
+            flex-direction: column;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+        
+        .stats-container {
+            flex-direction: column;
+        }
+        
+        .stat-item {
+            min-width: auto;
+        }
+        
+        .filter-row {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .filter-item {
+            width: 100%;
+        }
+        
+        .table-responsive {
+            overflow-x: auto;
+        }
+        
+        table {
+            min-width: 640px;
+        }
+        
+        .table thead th,
+        .table tbody td {
+            padding: 0.75rem 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        td a {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.75rem;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .screen-title {
+            font-size: 1.25rem;
+        }
+        
+        .filter-container {
+            padding: 1rem;
+        }
+        
+        .state-badge {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.6875rem;
+        }
+    }
+</style>
+{% endblock %}
+{% block extra_js %}
+<script>
+function filterWarning() {
+    const state = document.getElementById('warning-state').value.trim();
+    const startDate = document.getElementById('start-date').value;
+    const endDate = document.getElementById('end-date').value;
+    
+    // 使用URLSearchParams处理参数，避免空格和编码问题
+    const params = new URLSearchParams();
+    if (state) params.append('msg_state', state);
+    if (startDate) params.append('start_time', startDate);
+    if (endDate) params.append('end_time', endDate);
+    
+    // 构建完整URL
+    const baseUrl = "{{ url_for('warning.warning_list') }}";
+    const fullUrl = params.toString() ? `${baseUrl}?${params.toString()}` : baseUrl;
+    window.location.href = fullUrl;
+}
+
+
+
+// 更新当前时间
+function updateCurrentTime() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    
+    const timeString = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    document.getElementById('current-time').textContent = timeString;
+}
+
+// 刷新预警列表数据
+function refreshWarningList() {
+    // 发送异步请求获取最新的预警数据
+    fetch(window.location.href, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/html',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.text())
+    .then(html => {
+        // 创建临时DOM元素来解析HTML
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        
+        // 更新统计数据
+        const newStats = tempDiv.querySelector('.stats-container');
+        if (newStats) {
+            const currentStats = document.querySelector('.stats-container');
+            if (currentStats) {
+                currentStats.innerHTML = newStats.innerHTML;
+            }
+        }
+        
+        // 获取新的表格内容
+        const newTableContainer = tempDiv.querySelector('.table-container');
+        if (newTableContainer) {
+            // 更新当前页面的表格内容
+            const currentTableContainer = document.querySelector('.table-container');
+            if (currentTableContainer) {
+                currentTableContainer.innerHTML = newTableContainer.innerHTML;
+            }
+        }
+    })
+    .catch(error => console.error('刷新预警列表失败:', error));
+}
+
+// 添加表格行点击效果
+document.addEventListener('DOMContentLoaded', function() {
+    // 初始化当前时间
+    updateCurrentTime();
+    // 每秒更新一次时间
+    setInterval(updateCurrentTime, 1000);
+    
+    // 每30秒自动刷新预警列表
+    setInterval(refreshWarningList, 30000);
+    
+    const tableContainer = document.querySelector('.table-container');
+    if (!tableContainer) {
+        return; // 如果表格容器不存在，直接返回
+    }
+    
+    const tbody = tableContainer.querySelector('tbody');
+    if (!tbody) {
+        return; // 如果tbody不存在，直接返回
+    }
+    
+    // 移除行点击事件，只保留处理按钮的点击跳转功能
+    // rows.forEach(row => {
+    //     row.addEventListener('click', function(e) {
+    //         // 不处理按钮点击事件
+    //         if (e.target.closest('button') || e.target.closest('a')) {
+    //             return;
+    //         }
+    //         
+    //         // 跳转到处理页面
+    //         const link = this.querySelector('a');
+    //         if (link) {
+    //             window.location.href = link.href;
+    //         }
+    //     });
+    // });
+});
+</script>
+{% endblock %}

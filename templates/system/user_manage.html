@@ -1,0 +1,233 @@
+{% extends "base.html" %}  <!-- 单向继承base.html，避免递归 -->
+{% block title %}用户管理{% endblock %}
+
+{# 页面专属样式 #}
+{% block extra_css %}
+<style>
+/* 页面容器 */
+.user-manage-container {
+    padding: 20px;
+    background-color: #f8f9fa;
+    min-height: calc(100vh - 80px);
+}
+
+/* 操作栏 */
+.operation-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+}
+
+.operation-bar .title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #343a40;
+    margin: 0;
+}
+
+.btn-add {
+    padding: 8px 20px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    text-decoration: none;
+}
+
+.btn-add:hover {
+    background-color: #218838;
+    color: white;
+    text-decoration: none;
+}
+
+/* 用户列表表格 */
+.user-table {
+    width: 100%;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+    border-collapse: collapse;
+}
+
+.user-table th, .user-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.user-table th {
+    background-color: #f8f9fa;
+    font-weight: 500;
+    color: #495057;
+    font-size: 14px;
+}
+
+.user-table td {
+    color: #343a40;
+    font-size: 14px;
+}
+
+/* 状态标签样式 */
+.status-tag {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-enabled {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-disabled {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+/* 操作按钮组 */
+.btn-group {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-edit {
+    padding: 4px 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    text-decoration: none;
+}
+
+.btn-edit:hover {
+    background-color: #0056b3;
+    color: white;
+    text-decoration: none;
+}
+
+.btn-delete {
+    padding: 4px 10px;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    text-decoration: none;
+}
+
+.btn-delete:hover {
+    background-color: #c82333;
+    color: white;
+    text-decoration: none;
+}
+
+/* 空数据提示 */
+.empty-tip {
+    text-align: center;
+    padding: 50px;
+    color: #6c757d;
+    font-size: 14px;
+}
+
+/* 响应式适配 */
+@media (max-width: 768px) {
+    .operation-bar {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+    .user-table th:nth-child(5), .user-table td:nth-child(5) {
+        display: none;  /* 小屏隐藏创建时间 */
+    }
+    .btn-group {
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="user-manage-container">
+    <!-- 操作栏 -->
+    <div class="operation-bar">
+        <h3 class="title">用户管理</h3>
+        <a href="{{ url_for('system.user_add') }}" class="btn-add">新增用户</a>
+    </div>
+
+    <!-- 用户列表表格 -->
+    <table class="user-table">
+        <thead>
+            <tr>
+                <th>用户ID</th>
+                <th>用户名</th>
+                <th>角色</th>
+                <th>状态</th>  <!-- 新增：状态列 -->
+                <th>创建时间</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if users %}
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.user_id }}</td>
+                    <td>{{ user.username }}</td>
+                    <td>{{ '管理员' if user.role == '管理员' else '普通用户' }}</td>
+                    <!-- 新增：启用/禁用状态显示 -->
+                    <td>
+                        {% if user.status == '启用' or user.status == 1 %}
+                            <span class="status-tag status-enabled">启用</span>
+                        {% else %}
+                            <span class="status-tag status-disabled">禁用</span>
+                        {% endif %}
+                    </td>
+                    <td>{{user.create_time or '-' }}</td>
+                    <td class="btn-group">
+                        <a href="{{ url_for('system.user_edit', user_id=user.user_id) }}" class="btn-edit">编辑</a>
+                        <a href="javascript:;" onclick="deleteUser({{ user.user_id }})" class="btn-delete">删除</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="6" class="empty-tip">暂无用户数据</td>  <!-- 列数从5改为6 -->
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 删除用户确认逻辑（复用之前的弹窗风格，避免递归）
+function deleteUser(userId) {
+    console.log('删除用户，ID：' + userId);
+    const tempUrl = "{{ url_for('system.user_delete', user_id=0) }}";
+    const deleteUrl = tempUrl.replace('0', userId);
+    if (confirm('确定要删除该用户吗？删除后将无法恢复。')) {
+        window.location.href = deleteUrl;
+    }
+}
+
+// 显示flash消息（继承base.html的flash渲染，无递归）
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            alert('{{ message }}');
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+</script>
+{% endblock %}

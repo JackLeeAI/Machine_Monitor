@@ -1,0 +1,37 @@
+# Virtual Environment
+venv/
+.env
+
+# Logs
+logs/
+*.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.pyc
+__pycache__/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Build files
+build/
+dist/
+*.egg-info/
+
+# Testing
+coverage/
+.tox/
+.pytest_cache/

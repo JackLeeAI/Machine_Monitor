@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% block title %}车间管理{% endblock %}
+
+{# 新增：页面专属样式 #}
+{% block extra_css %}
+<style>
+/* 页面整体样式 */
+.page-container {
+    padding: 20px;
+    background-color: #f8f9fa;
+    min-height: calc(100vh - 80px);
+}
+
+/* 页面头部 */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.page-header h2 {
+    margin: 0;
+    color: #343a40;
+    font-weight: 600;
+}
+
+/* 按钮样式 */
+.btn-add {
+    padding: 8px 16px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-add:hover {
+    background-color: #0056b3;
+    color: white;
+    text-decoration: none;
+}
+
+/* 表格容器 */
+.data-table-container {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+/* 数据表格样式 */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.data-table thead {
+    background-color: #e9f5ff;
+}
+
+.data-table th, .data-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.data-table th {
+    color: #495057;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* 序号列居中 */
+.data-table th:first-child, .data-table td:first-child {
+    text-align: center;
+    width: 80px;
+}
+
+/* 操作列宽度固定 */
+.data-table td:last-child {
+    width: 180px;
+}
+
+/* 表格行hover效果 */
+.data-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* 无数据提示 */
+.no-data {
+    text-align: center;
+    color: #6c757d;
+    padding: 40px 0;
+    font-size: 14px;
+}
+
+/* 操作按钮样式 */
+.btn-operate {
+    padding: 4px 10px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 13px;
+    margin-right: 8px;
+    display: inline-block;
+}
+
+.btn-operate.edit {
+    background-color: #28a745;
+    color: white;
+}
+
+.btn-operate.edit:hover {
+    background-color: #218838;
+    color: white;
+    text-decoration: none;
+}
+
+.btn-operate.delete {
+    background-color: #dc3545;
+    color: white;
+}
+
+.btn-operate.delete:hover {
+    background-color: #c82333;
+    color: white;
+    text-decoration: none;
+}
+
+/* 响应式适配 */
+@media (max-width: 768px) {
+    .data-table-container {
+        overflow-x: auto;
+    }
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header">
+        <h2>车间信息管理</h2>
+        <div style="display: flex; gap: 10px;">
+            <a href="{{ url_for('base_info.equipment_list') }}" class="btn-add">设备管理</a>
+            <a href="{{ url_for('base_info.workshop_add') }}" class="btn-add">新增车间</a>
+        </div>
+    </div>
+
+    <div class="data-table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    {# 修复：删除多余的<符号 #}
+                    <th>序号</th>
+                    <th>车间ID</th>
+                    <th>车间名称</th>
+                    <th>设备数量</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+                <tbody>
+                    {% if workshop_data %}
+                    {% for item in workshop_data %}  {# 移除enumerate，直接循环 #}
+                    <tr>
+                        <td>{{ loop.index }}</td>  {# 使用loop.index获取从1开始的序号 #}
+                        <td>{{ item.workshop.id }}</td>
+                        <td>{{ item.workshop.name }}</td>
+                        <td>{{ item.equip_count }}</td>
+                        <td>
+                            <a href="{{ url_for('base_info.workshop_edit', workshop_id=item.workshop.id) }}" class="btn-operate edit">编辑</a>
+                            <a href="javascript:;" onclick="deleteWorkshop({{ item.workshop.id }})" class="btn-operate delete">删除</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="no-data">暂无车间信息</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function deleteWorkshop(workshopId) {
+    // 1. 严格校验ID
+    const id = Number(workshopId);
+    if (!id || id <= 0) {
+        alert('⚠️ 车间ID无效，请刷新页面重试！');
+        return;
+    }
+
+    // 2. 直接构建删除URL
+     const realUrl = "/base-info/workshop/delete/" + id;
+
+     // 调试日志
+     console.log('真实删除URL：', realUrl);
+
+    // 3. 确认删除
+    if (confirm('确定要删除该车间吗？删除后将无法恢复。')) {
+        window.location.href = realUrl;
+    }
+}
+</script>
+{% endblock %}
