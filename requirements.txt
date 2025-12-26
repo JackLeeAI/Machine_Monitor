@@ -1,5 +1,4 @@
 flask==2.3.3
-#dmPython==2.5.5
 pymysql==1.1.0  # MySQL数据库驱动
 psycopg2-binary==2.9.9  # PostgreSQL数据库驱动
 flask-sqlalchemy==3.1.1
