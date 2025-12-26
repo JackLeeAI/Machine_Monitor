@@ -1,6 +1,5 @@
 flask==2.3.3
 python==3.9
-pymysql==1.1.0  # MySQL数据库驱动
 psycopg2-binary==2.9.9  # PostgreSQL数据库驱动
 flask-sqlalchemy==3.1.1
 flask-socketio==5.3.6
